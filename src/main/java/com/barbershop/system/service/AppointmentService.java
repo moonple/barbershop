@@ -1,22 +1,20 @@
 package com.barbershop.system.service;
 
-// ↓↓↓↓↓ 显式导入所有需要的实体类，防止报错 ↓↓↓↓↓
-import com.barbershop.system.entity.Appointment;
+import com.barbershop. system.entity.Appointment;
 import com.barbershop.system.entity.Employee;
 import com.barbershop.system.entity.Inventory;
-import com.barbershop.system.entity.Member;
+import com. barbershop.system.entity. Member;
 import com.barbershop.system.entity.ServiceItem;
-// ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 import com.barbershop.system.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans. factory.annotation.Autowired;
+import org.springframework.stereotype. Service;
+import org.springframework. transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time. LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+import java. util.List;
 
 @Service
 public class AppointmentService {
@@ -27,10 +25,10 @@ public class AppointmentService {
     @Autowired private ServiceItemRepository serviceItemRepository;
     @Autowired private InventoryRepository inventoryRepository;
 
-    public List<Appointment> findAll() { return appointmentRepository.findAll(); }
+    public List<Appointment> findAll() { return appointmentRepository. findAll(); }
 
     public List<Appointment> search(String keyword) {
-        if (keyword.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+        if (keyword. matches("^\\d{4}-\\d{2}-\\d{2}$")) {
             return appointmentRepository.findByAppointmentDate(LocalDate.parse(keyword));
         }
         return appointmentRepository.searchByKeyword(keyword);
@@ -41,33 +39,33 @@ public class AppointmentService {
         Member m = memberRepository.findById(mId).orElseThrow(() -> new RuntimeException("会员不存在"));
         Employee e = employeeRepository.findById(eId).orElseThrow(() -> new RuntimeException("员工不存在"));
 
-        // 如果这里报错，说明 ServiceItem 类文件真的不存在！请检查 src/main/java/com/barbershop/system/entity/ServiceItem.java
-        ServiceItem  = serviceItemRepository.findById(sId).orElseThrow(() -> new RuntimeException("服务不存在"));
+        // ✅ 修复：添加变量名 s
+        ServiceItem s = serviceItemRepository.findById(sId).orElseThrow(() -> new RuntimeException("服务不存在"));
 
-        LocalDateTime start = LocalDateTime.of(date, LocalTime.of(startHour, 0));
+        LocalDateTime start = LocalDateTime.of(date, LocalTime. of(startHour, 0));
         LocalDateTime end = start.plusMinutes(s.getDuration());
 
         // 营业时间校验 (9-12, 14-17)
         checkBusinessHours(start, end);
 
         // 冲突检测
-        List<Appointment> conflicts = appointmentRepository.findConflicts(eId, start, end);
+        List<Appointment> conflicts = appointmentRepository. findConflicts(eId, start, end);
         if (!conflicts.isEmpty()) {
             throw new RuntimeException("冲突：该员工在 " + startHour + "点 时段已有预约！");
         }
 
         Appointment app = new Appointment();
-        app.setMemberId(mId); app.setMemberName(m.getName());
+        app.setMemberId(mId); app.setMemberName(m. getName());
         app.setServiceId(sId); app.setServiceName(s.getName());
         app.setEmployeeId(eId); app.setEmployeeName(e.getName());
         app.setAppointmentDate(date);
         app.setStartTime(start);
         app.setEndTime(end);
-        app.setTimeRange(String.format("%02d:%02d - %02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute()));
+        app.setTimeRange(String. format("%02d:%02d - %02d:%02d", start.getHour(), start.getMinute(), end.getHour(), end.getMinute()));
         app.setStatus("待服务");
         app.setRemark(LocalDate.now().toString());
 
-        return appointmentRepository.save(app);
+        return appointmentRepository. save(app);
     }
 
     @Transactional
@@ -102,9 +100,10 @@ public class AppointmentService {
     }
 
     private void deductInventory(Integer sId) {
-        ServiceItem  = serviceItemRepository.findById(sId).orElse(null);
+        // ✅ 修复：添加变量名 s
+        ServiceItem s = serviceItemRepository.findById(sId).orElse(null);
         if (s != null && s.getConsumeItemIds() != null && !s.getConsumeItemIds().isEmpty()) {
-            for (String idStr : s.getConsumeItemIds().split(",")) {
+            for (String idStr : s. getConsumeItemIds().split(",")) {
                 if (idStr.isEmpty()) continue;
                 try {
                     Integer itemId = Integer.parseInt(idStr);
