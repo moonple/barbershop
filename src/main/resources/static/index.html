@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>理发店管理系统</title>
+    <style>
+        /* --- 全局样式 --- */
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #f4f6f8; }
+        .sidebar { width: 220px; background: #2c3e50; color: white; display: flex; flex-direction: column; }
+        .sidebar h2 { text-align: center; padding: 20px 0; border-bottom: 1px solid #34495e; margin: 0; font-size: 18px; }
+        .menu-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #34495e; transition: 0.3; }
+        .menu-item:hover, .menu-item.active { background: #34495e; border-left: 4px solid #3498db; }
+        .user-info { margin-top: auto; padding: 20px; font-size: 14px; background: #1a252f; }
+        .logout { color: #e74c3c; cursor: pointer; text-decoration: underline; margin-left: 10px; }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .calendar-box { font-weight: bold; color: #555; font-size: 16px; }
+        .module-section { display: none; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .module-section.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; }
+        input, select { padding: 8px; border: 1px solid #ddd; margin-right: 5px; border-radius: 4px; }
+        button { padding: 8px 12px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-add { background: #28a745; }
+        .btn-del { background: #dc3545; }
+        .btn-edit { background: #ffc107; color: #333; }
+        .btn-search { background: #17a2b8; }
+        .btn-cancel { background: #6c757d; }
+        .search-box { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #eee; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select { width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .modal-footer { text-align: right; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>💈 悦容理发店</h2>
+    <div class="menu-item active" onclick="switchTab('member')">👤 会员管理</div>
+    <div class="menu-item" onclick="switchTab('employee')">👔 员工管理</div>
+    <div class="menu-item" onclick="switchTab('admin')">🛡️ 管理员管理</div>
+    <div class="menu-item" onclick="switchTab('inventory')">📦 库存管理</div>
+    <div class="menu-item" onclick="switchTab('service')">💇 服务项目管理</div>
+    <div class="menu-item" onclick="switchTab('appointment')">📅 预约管理</div>
+    <div class="user-info">
+        当前用户：<span id="currentAdminName">...</span>
+        <span class="logout" onclick="logout()">退出</span>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <div>欢迎使用管理系统</div>
+        <div class="calendar-box">📅 当前时间：<span id="clock"></span></div>
+    </div>
+
+    <!-- 1. 会员 -->
+    <div id="member-section" class="module-section active">
+        <h3>👤 会员管理</h3>
+        <div class="search-box">
+            <input type="text" id="searchMemberInput" placeholder="输入手机号查询..." style="width: 200px;">
+            <button class="btn-search" onclick="searchMember()">🔍 查询</button>
+            <button class="btn-cancel" onclick="resetMemberSearch()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="mName" placeholder="姓名">
+            <input type="text" id="mPhone" placeholder="手机号">
+            <select id="mGender"><option value="男">男</option><option value="女">女</option></select>
+            <button class="btn-add" onclick="addMember()">+ 新增会员</button>
+        </div>
+        <table id="memberTable">
+            <thead><tr><th>ID</th><th>姓名</th><th>手机</th><th>性别</th><th>余额</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 2. 员工 -->
+    <div id="employee-section" class="module-section">
+        <h3>👔 员工管理</h3>
+        <div class="search-box">
+            <input type="text" id="searchEmpInput" placeholder="输入工号或手机号查询" style="width: 200px;">
+            <button class="btn-search" onclick="searchEmployee()">🔍 查询</button>
+            <button class="btn-cancel" onclick="resetEmployeeSearch()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="eName" placeholder="员工姓名">
+            <input type="text" id="ePhone" placeholder="员工手机">
+            <select id="eGender"><option value="男">男</option><option value="女">女</option></select>
+            <button class="btn-add" onclick="addEmployee()">+ 新增员工</button>
+        </div>
+        <table id="employeeTable">
+            <thead><tr><th>工号 (ID)</th><th>姓名</th><th>手机号</th><th>性别</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 3. 管理员 -->
+    <div id="admin-section" class="module-section">
+        <h3>🛡️ 管理员档案</h3>
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="aName" placeholder="管理员姓名">
+            <input type="text" id="aPhone" placeholder="登录手机号">
+            <select id="aGender"><option value="男">男</option><option value="女">女</option></select>
+            <button class="btn-add" onclick="addAdmin()">+ 新增管理员</button>
+        </div>
+        <table id="adminTable">
+            <thead><tr><th>ID</th><th>姓名</th><th>登录手机</th><th>性别</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 4. 库存 -->
+    <div id="inventory-section" class="module-section">
+        <h3>📦 库存管理</h3>
+        <div class="search-box">
+            <input type="text" id="searchInv" placeholder="输入物品名称或ID查询" style="width: 200px;">
+            <button class="btn-search" onclick="searchInventory()">🔍 查询</button>
+            <button class="btn-cancel" onclick="loadInventory()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="iName" placeholder="物品名称">
+            <input type="number" id="iQty" placeholder="初始库存" min="0" style="width:100px;">
+            <input type="number" id="iThreshold" placeholder="警戒线" min="0" style="width:100px;">
+            <button class="btn-add" onclick="addInventory()">+ 新增物品</button>
+        </div>
+        <table id="inventoryTable">
+            <thead><tr><th>ID</th><th>物品名称</th><th>当前库存</th><th>警戒线</th><th>备注状态</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 5. 服务 -->
+    <div id="service-section" class="module-section">
+        <h3>💇 服务项目管理</h3>
+        <div class="search-box">
+            <input type="text" id="searchServiceInput" placeholder="输入服务名称或ID" style="width: 200px;">
+            <button class="btn-search" onclick="searchService()">🔍 查询</button>
+            <button class="btn-cancel" onclick="loadServices()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button class="btn-add" onclick="openAddServiceModal()">+ 新增服务项目</button>
+        </div>
+        <table id="serviceTable">
+            <thead><tr><th>ID</th><th>服务名称</th><th>价格</th><th>用时(分钟)</th><th>消耗物品IDs</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 6. 预约管理 (新增) -->
+    <div id="appointment-section" class="module-section">
+        <h3>📅 预约管理</h3>
+        <div class="search-box">
+            <input type="text" id="searchAppInput" placeholder="ID/会员/员工 或 2026-01-01" style="width: 250px;">
+            <button class="btn-search" onclick="searchApp()">🔍 查询</button>
+            <button class="btn-cancel" onclick="loadApps()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button class="btn-add" onclick="openAddAppModal()">+ 新增预约</button>
+        </div>
+        <table id="appTable">
+            <thead><tr><th>ID</th><th>日期</th><th>时间段</th><th>会员</th><th>服务项目</th><th>员工</th><th>备注</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================== 弹窗组件区 ================== -->
+
+<!-- 1. 会员修改 -->
+<div id="editMemberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 修改会员信息</div>
+        <input type="hidden" id="editMemId">
+        <div class="form-group"><label>姓名</label><input type="text" id="editMemName"></div>
+        <div class="form-group"><label>手机号</label><input type="text" id="editMemPhone"></div>
+        <div class="form-group"><label>性别</label><select id="editMemGender"><option value="男">男</option><option value="女">女</option></select></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editMemberModal')">取消</button><button class="btn-add" onclick="submitEditMember()">保存</button></div>
+    </div>
+</div>
+
+<!-- 2. 员工修改 -->
+<div id="editEmpModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 修改员工信息</div>
+        <input type="hidden" id="editEmpId">
+        <div class="form-group"><label>姓名</label><input type="text" id="editEmpName"></div>
+        <div class="form-group"><label>手机号</label><input type="text" id="editEmpPhone"></div>
+        <div class="form-group"><label>性别</label><select id="editEmpGender"><option value="男">男</option><option value="女">女</option></select></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editEmpModal')">取消</button><button class="btn-add" onclick="submitEditEmployee()">保存</button></div>
+    </div>
+</div>
+
+<!-- 3. 管理员修改 -->
+<div id="editAdminModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 修改管理员信息</div>
+        <input type="hidden" id="editAdminId">
+        <div class="form-group"><label>姓名</label><input type="text" id="editAdminName"></div>
+        <div class="form-group"><label>手机号</label><input type="text" id="editAdminPhone"></div>
+        <div class="form-group"><label>性别</label><select id="editAdminGender"><option value="男">男</option><option value="女">女</option></select></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editAdminModal')">取消</button><button class="btn-add" onclick="submitEditAdmin()">保存</button></div>
+    </div>
+</div>
+
+<!-- 4.1 库存修改 -->
+<div id="editInvModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 修改物品信息</div>
+        <input type="hidden" id="eiId">
+        <div class="form-group"><label>物品名称</label><input type="text" id="eiName"></div>
+        <div class="form-group"><label>库存数量</label><input type="number" id="eiQty"></div>
+        <div class="form-group"><label>警戒线</label><input type="number" id="eiThreshold"></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editInvModal')">取消</button><button class="btn-add" onclick="submitEditInv()">保存</button></div>
+    </div>
+</div>
+
+<!-- 4.2 采购 -->
+<div id="purchaseModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">🛒 物品采购入库</div>
+        <input type="hidden" id="purId">
+        <p>正在采购：<b id="purName"></b></p>
+        <div class="form-group"><label>采购数量 (必须大于0)</label><input type="number" id="purCount" placeholder="输入数量"></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('purchaseModal')">取消</button><button class="btn-search" style="background-color: #6610f2;" onclick="submitPurchase()">确认入库</button></div>
+    </div>
+</div>
+
+<!-- 5. 服务修改/新增 -->
+<div id="serviceModal" class="modal">
+    <div class="modal-content" style="width: 500px;">
+        <div class="modal-header" id="serviceModalTitle">新增服务</div>
+        <input type="hidden" id="svcId">
+        <div class="form-group"><label>服务名称</label><input type="text" id="svcName"></div>
+        <div class="form-group"><label>价格 (元)</label><input type="number" id="svcPrice"></div>
+        <div class="form-group">
+            <label>服务用时 (分钟)</label>
+            <select id="svcDuration">
+                <option value="60">60 分钟 (1小时)</option>
+                <option value="120">120 分钟 (2小时)</option>
+                <option value="180">180 分钟 (3小时)</option>
+            </select>
+        </div>
+        <hr style="margin: 15px 0; border:0; border-top:1px solid #eee;">
+        <label style="font-weight:bold; display:block; margin-bottom:10px;">消耗物品 (最多选5个)</label>
+        <div class="form-group"><select id="svcItem1" class="item-select"><option value="">-- 无消耗 --</option></select></div>
+        <div class="form-group"><select id="svcItem2" class="item-select"><option value="">-- 无消耗 --</option></select></div>
+        <div class="form-group"><select id="svcItem3" class="item-select"><option value="">-- 无消耗 --</option></select></div>
+        <div class="form-group"><select id="svcItem4" class="item-select"><option value="">-- 无消耗 --</option></select></div>
+        <div class="form-group"><select id="svcItem5" class="item-select"><option value="">-- 无消耗 --</option></select></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('serviceModal')">取消</button><button class="btn-add" onclick="submitService()">保存</button></div>
+    </div>
+</div>
+
+<!-- 6. 新增预约弹窗 (新增) -->
+<div id="addAppModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">📅 新增预约</div>
+        <div class="form-group"><label>选择日期</label><input type="date" id="appDate"></div>
+        <div class="form-group">
+            <label>开始时间 (整点)</label>
+            <select id="appStartHour">
+                <option value="" disabled selected>-- 请选择 --</option>
+                <option value="9">09:00</option>
+                <option value="10">10:00</option>
+                <option value="11">11:00</option>
+                <option value="14">14:00</option>
+                <option value="15">15:00</option>
+                <option value="16">16:00</option>
+            </select>
+            <small style="color:#666">注: 12:00-14:00 为午休</small>
+        </div>
+        <div class="form-group"><label>选择会员</label><select id="appMemberId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择服务</label><select id="appServiceId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择员工</label><select id="appEmployeeId"><option>加载中...</option></select></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('addAppModal')">取消</button><button class="btn-add" onclick="submitApp()">提交预约</button></div>
+    </div>
+</div>
+
+<script>
+    let currentAdmin = null;
+    const PHONE_REGEX = /^1[3-9]\d{9}$/;
+    let inventoryCache = []; // 服务弹窗用
+
+    window.onload = function() {
+        const str = localStorage.getItem('currentAdmin');
+        if (!str) { window.location.href = '/login.html'; return; }
+        try { currentAdmin = JSON.parse(str); document.getElementById('currentAdminName').innerText = currentAdmin.name; } catch(e) { window.location.href = '/login.html'; }
+        updateTime(); setInterval(updateTime, 1000);
+        loadMembers();
+    };
+
+    function updateTime() { document.getElementById('clock').innerText = new Date().toLocaleString(); }
+    function logout() { if(confirm('确定退出吗？')) { localStorage.removeItem('currentAdmin'); window.location.href = '/login.html'; } }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function switchTab(t) {
+        document.querySelectorAll('.module-section').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(d => d.classList.remove('active'));
+        const targetSection = document.getElementById(t + '-section');
+        if (targetSection) targetSection.classList.add('active');
+
+        if(t === 'member') loadMembers();
+        if(t === 'employee') loadEmployees();
+        if(t === 'admin') loadAdmins();
+        if(t === 'inventory') loadInventory();
+        if(t === 'service') loadServices();
+        if(t === 'appointment') loadApps(); // 新增
+    }
+
+    // --- 会员 ---
+    function loadMembers() { fetch('/api/members').then(r=>r.json()).then(renderMemberTable); }
+    function renderMemberTable(data) {
+        let h = ''; if(data.length===0) h='<tr><td colspan="6">暂无数据</td></tr>';
+        else data.forEach(m => h+=`<tr><td>${m.id}</td><td>${m.name}</td><td>${m.phone}</td><td>${m.gender}</td><td>¥${m.balance}</td><td><button class="btn-edit" onclick="openMemberModal('${m.id}','${m.name}','${m.phone}','${m.gender}')">修改</button><button class="btn-del" onclick="delMember(${m.id})">删除</button></td></tr>`);
+        document.querySelector('#memberTable tbody').innerHTML = h;
+    }
+    function searchMember() { const k=document.getElementById('searchMemberInput').value.trim(); if(!k)return alert("空"); fetch('/api/members/search?keyword='+k).then(r=>r.json()).then(renderMemberTable); }
+    function resetMemberSearch() { document.getElementById('searchMemberInput').value=''; loadMembers(); }
+    function openMemberModal(id,n,p,g){ document.getElementById('editMemId').value=id;document.getElementById('editMemName').value=n;document.getElementById('editMemPhone').value=p;document.getElementById('editMemGender').value=g;document.getElementById('editMemberModal').style.display='block';}
+    function submitEditMember(){ const id=document.getElementById('editMemId').value,n=document.getElementById('editMemName').value,p=document.getElementById('editMemPhone').value,g=document.getElementById('editMemGender').value; if(!n||!p)return alert("空"); if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/members/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:n,phone:p,gender:g})}).then(()=>{alert("成功");closeModal('editMemberModal');loadMembers();}); }
+    function addMember(){ const n=document.getElementById('mName').value,p=document.getElementById('mPhone').value,g=document.getElementById('mGender').value; if(!n||!p)return alert("空"); if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/members',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,phone:p,gender:g})}).then(()=>{alert("成功");loadMembers();document.getElementById('mName').value='';document.getElementById('mPhone').value='';}); }
+    function delMember(id){ if(confirm('删?')) fetch('/api/members/'+id,{method:'DELETE'}).then(()=>loadMembers()); }
+
+    // --- 员工 ---
+    function loadEmployees() { fetch('/api/employees').then(r=>r.json()).then(renderEmpTable); }
+    function renderEmpTable(data) { let h=''; if(data.length===0)h='<tr><td colspan="5">无</td></tr>'; else data.forEach(e=>h+=`<tr><td>${e.id}</td><td>${e.name}</td><td>${e.phone}</td><td>${e.gender}</td><td><button class="btn-edit" onclick="openEmpModal(${e.id},'${e.name}','${e.phone}','${e.gender}')">修改</button><button class="btn-del" onclick="delEmployee(${e.id})">删除</button></td></tr>`); document.querySelector('#employeeTable tbody').innerHTML=h;}
+    function searchEmployee(){ const k=document.getElementById('searchEmpInput').value.trim(); if(!k)return alert("空"); fetch('/api/employees/search?keyword='+k).then(r=>r.json()).then(renderEmpTable); }
+    function resetEmployeeSearch(){ document.getElementById('searchEmpInput').value=''; loadEmployees(); }
+    function openEmpModal(id,n,p,g){ document.getElementById('editEmpId').value=id;document.getElementById('editEmpName').value=n;document.getElementById('editEmpPhone').value=p;document.getElementById('editEmpGender').value=g;document.getElementById('editEmpModal').style.display='block';}
+    function submitEditEmployee(){ const id=document.getElementById('editEmpId').value,n=document.getElementById('editEmpName').value,p=document.getElementById('editEmpPhone').value,g=document.getElementById('editEmpGender').value; if(!n||!p)return alert("空");if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/employees/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:n,phone:p,gender:g})}).then(()=>{alert("成功");closeModal('editEmpModal');loadEmployees();}); }
+    function addEmployee(){ const n=document.getElementById('eName').value,p=document.getElementById('ePhone').value,g=document.getElementById('eGender').value; if(!n||!p)return alert("空");if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,phone:p,gender:g})}).then(()=>{alert("成功");loadEmployees();document.getElementById('eName').value='';document.getElementById('ePhone').value='';}); }
+    function delEmployee(id){ if(confirm('删?')) fetch('/api/employees/'+id,{method:'DELETE'}).then(()=>loadEmployees()); }
+
+    // --- 管理员 ---
+    function loadAdmins(){ fetch('/api/admins').then(r=>r.json()).then(d=>{ let h=''; d.forEach(a=>h+=`<tr><td>${a.id}</td><td>${a.name}</td><td>${a.phone}</td><td>${a.gender}</td><td><button class="btn-edit" onclick="openAdminModal(${a.id},'${a.name}','${a.phone}','${a.gender}')">修改</button><button class="btn-del" onclick="delAdmin(${a.id})">删除</button></td></tr>`); document.querySelector('#adminTable tbody').innerHTML=h; }); }
+    function openAdminModal(id,n,p,g){ document.getElementById('editAdminId').value=id;document.getElementById('editAdminName').value=n;document.getElementById('editAdminPhone').value=p;document.getElementById('editAdminGender').value=g;document.getElementById('editAdminModal').style.display='block';}
+    function submitEditAdmin(){ const id=document.getElementById('editAdminId').value,n=document.getElementById('editAdminName').value,p=document.getElementById('editAdminPhone').value,g=document.getElementById('editAdminGender').value; if(!n||!p)return alert("空");if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/admins',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:n,phone:p,gender:g})}).then(r=>{if(r.ok){alert("成功");closeModal('editAdminModal');loadAdmins();}else alert("失败")}); }
+    function addAdmin(){ const n=document.getElementById('aName').value,p=document.getElementById('aPhone').value,g=document.getElementById('aGender').value; if(!n||!p)return alert("空");if(!PHONE_REGEX.test(p))return alert("格式错"); fetch('/api/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,phone:p,gender:g})}).then(r=>{if(r.ok){alert("成功");loadAdmins();document.getElementById('aName').value='';document.getElementById('aPhone').value='';}else alert("失败")}); }
+    function delAdmin(id){ if(confirm('删?')) fetch(`/api/admins/${id}?currentAdminId=${currentAdmin.id}`,{method:'DELETE'}).then(r=>{if(r.ok)loadAdmins();else alert("失败")}); }
+
+    // --- 库存 ---
+    function loadInventory(){ document.getElementById('searchInv').value=''; fetch('/api/inventory').then(r=>r.json()).then(renderInvTable); }
+    function renderInvTable(data){ let h=''; if(data.length===0)h='<tr><td colspan="6">无</td></tr>'; else data.forEach(i=>{ let =i.remark&&i.remark.includes('不足')?'color:red':'color:green'; h+=`<tr><td>${i.id}</td><td>${i.name}</td><td>${i.quantity}</td><td>${i.threshold}</td><td style="${}">${i.remark||''}</td><td><button class="btn-search" style="background:#6610f2" onclick="openPurchase(${i.id},'${i.name}')">采购</button><button class="btn-edit" onclick="openInvModal(${i.id},'${i.name}',${i.quantity},${i.threshold})">修改</button><button class="btn-del" onclick="delInventory(${i.id})">删除</button></td></tr>`;}); document.querySelector('#inventoryTable tbody').innerHTML=h; }
+    function searchInventory(){ const k=document.getElementById('searchInv').value.trim(); if(!k)return loadInventory(); fetch('/api/inventory/search?keyword='+k).then(r=>r.json()).then(renderInvTable); }
+    function addInventory(){ const n=document.getElementById('iName').value,q=document.getElementById('iQty').value,t=document.getElementById('iThreshold').value; if(!n||!q||!t)return alert("空"); fetch('/api/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,quantity:q,threshold:t})}).then(()=>{alert("成功");loadInventory();document.getElementById('iName').value='';}); }
+    function openInvModal(id,n,q,t){ document.getElementById('eiId').value=id;document.getElementById('eiName').value=n;document.getElementById('eiQty').value=q;document.getElementById('eiThreshold').value=t;document.getElementById('editInvModal').style.display='block';}
+    function submitEditInv(){ const id=document.getElementById('eiId').value,n=document.getElementById('eiName').value,q=document.getElementById('eiQty').value,t=document.getElementById('eiThreshold').value; if(q<0||t<0)return alert("负数"); fetch('/api/inventory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:n,quantity:q,threshold:t})}).then(()=>{alert("成功");closeModal('editInvModal');loadInventory();}); }
+    function openPurchase(id,n){ document.getElementById('purId').value=id;document.getElementById('purName').innerText=n;document.getElementById('purCount').value='';document.getElementById('purchaseModal').style.display='block';}
+    function submitPurchase(){ const id=document.getElementById('purId').value,c=document.getElementById('purCount').value; if(c<=0)return alert("必须>0"); fetch(`/api/inventory/${id}/purchase`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({count:parseInt(c)})}).then(()=>{alert("成功");closeModal('purchaseModal');loadInventory();}); }
+    function delInventory(id){ if(confirm('删?')) fetch('/api/inventory/'+id,{method:'DELETE'}).then(()=>loadInventory()); }
+
+    // --- 服务 ---
+    function loadServices(){ document.getElementById('searchServiceInput').value=''; fetch('/api/services').then(r=>r.json()).then(renderServiceTable); fetch('/api/inventory').then(r=>r.json()).then(d=>{inventoryCache=d;}); }
+    function renderServiceTable(data){ let h=''; if(data.length===0)h='<tr><td colspan="6">无</td></tr>'; else data.forEach(=>{ h+=`<tr><td>${.id}</td><td>${.name}</td><td style="color:#d35400">¥${.price}</td><td>${.duration}分</td><td style="font-size:12px">${.consumeItemIds||'无'}</td><td><button class="btn-edit" onclick="openEditService(${.id},'${.name}',${.price},${.duration},'${.consumeItemIds}')">修改</button><button class="btn-del" onclick="delService(${.id})">删除</button></td></tr>`;}); document.querySelector('#serviceTable tbody').innerHTML=h; }
+    function searchService(){ const k=document.getElementById('searchServiceInput').value.trim(); if(!k)return loadServices(); fetch('/api/services/search?keyword='+k).then(r=>r.json()).then(renderServiceTable); }
+    function fillItemSelects(idsStr){ let arr=[]; if(idsStr) arr=idsStr.split(',').map(Number); for(let i=1;i<=5;i++){ const sel=document.getElementById('svcItem'+i); sel.innerHTML='<option value="">-- 无消耗 --</option>'; inventoryCache.forEach(it=>{ const op=document.createElement('option'); op.value=it.id; op.innerText=it.name; if(arr[i-1]===it.id)op.selected=true; sel.appendChild(op); }); } }
+    function openAddServiceModal(){ document.getElementById('serviceModalTitle').innerText="新增服务"; document.getElementById('svcId').value=''; document.getElementById('svcName').value=''; document.getElementById('svcPrice').value=''; document.getElementById('svcDuration').value=''; fillItemSelects(""); document.getElementById('serviceModal').style.display='block'; }
+    function openEditService(id,n,p,d,ids){ document.getElementById('serviceModalTitle').innerText="修改服务"; document.getElementById('svcId').value=id; document.getElementById('svcName').value=n; document.getElementById('svcPrice').value=p; document.getElementById('svcDuration').value=d; fillItemSelects(ids||""); document.getElementById('serviceModal').style.display='block'; }
+    function submitService(){ const id=document.getElementById('svcId').value,n=document.getElementById('svcName').value,p=document.getElementById('svcPrice').value,d=document.getElementById('svcDuration').value; let ids=[]; for(let i=1;i<=5;i++){const v=document.getElementById('svcItem'+i).value;if(v)ids.push(v);} if(!n||!p||!d)return alert("不完整"); const m=id?'PUT':'POST'; const u=id?('/api/services/'+id):'/api/services'; fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,price:p,duration:d,consumeItemIds:ids.join(',')})}).then(async r=>{if(r.ok){alert("成功");closeModal('serviceModal');loadServices();}else alert((await r.json()).message)}); }
+    function delService(id){ if(confirm('删?')) fetch('/api/services/'+id,{method:'DELETE'}).then(()=>loadServices()); }
+
+    // --- 预约 (新增模块逻辑) ---
+    function loadApps() { document.getElementById('searchAppInput').value = ''; fetch('/api/appointments').then(r=>r.json()).then(renderAppTable); }
+    function renderAppTable(data) {
+        let h = ''; if(data.length===0) h='<tr><td colspan="9" style="text-align:center">暂无预约</td></tr>';
+        else data.forEach(a => {
+            let c = '#333'; if(a.status==='待服务')c='#f39c12'; if(a.status==='已服务')c='#27ae60'; if(a.status==='已取消')c='#999';
+            let btns = '';
+            if(a.status==='待服务') {
+                btns = `<button style="background:#28a745;padding:4px 8px;font-size:12px" onclick="changeAppStatus(${a.id},'complete')">✅ 已服务</button>
+                        <button style="background:#6c757d;padding:4px 8px;font-size:12px" onclick="changeAppStatus(${a.id},'cancel')">🚫 取消</button>`;
+            } else btns='<span style="color:#ccc;font-size:12px">不可操作</span>';
+            h += `<tr><td>${a.id}</td><td>${a.appointmentDate}</td><td>${a.timeRange}</td><td>${a.memberName}</td><td>${a.serviceName}</td><td>${a.employeeName}</td><td style="color:#888;font-size:12px">${a.remark}</td><td style="color:${c};font-weight:bold">${a.status}</td><td>${btns} <button class="btn-del" style="padding:4px 8px;font-size:12px" onclick="delApp(${a.id})">删除</button></td></tr>`;
+        });
+        document.querySelector('#appTable tbody').innerHTML = h;
+    }
+    function searchApp() { const k=document.getElementById('searchAppInput').value.trim(); if(!k)return loadApps(); fetch('/api/appointments/search?keyword='+k).then(r=>r.json()).then(renderAppTable); }
+    function openAddAppModal() {
+        document.getElementById('appDate').valueAsDate = new Date();
+        Promise.all([fetch('/api/members').then(r=>r.json()), fetch('/api/services').then(r=>r.json()), fetch('/api/employees').then(r=>r.json())])
+        .then(([m,,e])=>{
+            let h1='<option value="">--请选择--</option>'; m.forEach(x=>h1+=`<option value="${x.id}">${x.name}</option>`); document.getElementById('appMemberId').innerHTML=h1;
+            let h2='<option value="">--请选择--</option>'; .forEach(x=>h2+=`<option value="${x.id}">${x.name} (${x.duration}分)</option>`); document.getElementById('appServiceId').innerHTML=h2;
+            let h3='<option value="">--请选择--</option>'; e.forEach(x=>h3+=`<option value="${x.id}">${x.name}</option>`); document.getElementById('appEmployeeId').innerHTML=h3;
+            document.getElementById('addAppModal').style.display='block';
+        });
+    }
+    function submitApp() {
+        const d=document.getElementById('appDate').value, sh=document.getElementById('appStartHour').value, m=document.getElementById('appMemberId').value, =document.getElementById('appServiceId').value, e=document.getElementById('appEmployeeId').value;
+        if(!d||!sh||!m||!||!e) return alert("不完整");
+        fetch('/api/appointments', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:d,startHour:sh,memberId:m,serviceId:,employeeId:e})})
+        .then(async r=>{if(r.ok){alert("成功");closeModal('addAppModal');loadApps();}else alert((await r.json()).message)});
+    }
+    function changeAppStatus(id,act) { if(confirm(act==='complete'?'确认完成? (扣库存)':'确认取消?')) fetch(`/api/appointments/${id}/${act}`,{method:'POST'}).then(()=>loadApps()); }
+    function delApp(id) { if(confirm('删除不可恢复, 确定?')) fetch('/api/appointments/'+id,{method:'DELETE'}).then(()=>loadApps()); }
+
+</script>
+
+</body>
+</html>
