@@ -337,6 +337,7 @@
     <div class="menu-item" data-tab="service">💇 服务项目管理</div>
     <div class="menu-item" data-tab="appointment">📅 预约管理</div>
     <div class="menu-item" data-tab="execution">✅ 服务执行管理</div>
+    <div class="menu-item" data-tab="financial">💰 财务管理</div>
     <div class="user-info">
         当前用户：<span id="currentAdminName">... </span>
         <span class="logout" onclick="logout()">退出</span>
@@ -484,6 +485,71 @@
             <tbody></tbody>
         </table>
     </div>
+
+    <!-- 8. 财务管理 -->
+    <div id="financial-section" class="module-section">
+        <h3>💰 财务管理</h3>
+        
+        <!-- 8.1 服务收入 -->
+        <div style="margin-top: 20px;">
+            <h4 style="color: #27ae60; border-left: 4px solid #27ae60; padding-left: 10px;">📈 服务收入</h4>
+            <div class="search-box">
+                <label style="margin-right: 10px;">筛选条件：</label>
+                <select id="incomeFilterMemberId" style="width: 150px;">
+                    <option value="">全部会员</option>
+                </select>
+                <select id="incomeFilterServiceId" style="width: 150px;">
+                    <option value="">全部服务</option>
+                </select>
+                <select id="incomeFilterEmployeeId" style="width: 150px;">
+                    <option value="">全部员工</option>
+                </select>
+                <input type="date" id="incomeFilterDate" style="width: 150px;">
+                <button class="btn-search" onclick="searchIncome()">🔍 查询</button>
+                <button class="btn-cancel" onclick="resetIncomeSearch()">🔄 重置</button>
+            </div>
+            <table id="incomeTable">
+                <thead><tr><th>服务记录ID</th><th>会员ID</th><th>项目ID</th><th>员工ID</th><th>费用</th><th>日期</th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr style="background: #d5f4e6; font-weight: bold;">
+                        <td colspan="4" style="text-align: right; padding-right: 20px;">总收入：</td>
+                        <td id="totalIncome" style="color: #27ae60; font-size: 16px;">¥0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- 8.2 采购支出 -->
+        <div style="margin-top: 30px;">
+            <h4 style="color: #e74c3c; border-left: 4px solid #e74c3c; padding-left: 10px;">📉 采购支出</h4>
+            <div class="search-box">
+                <label style="margin-right: 10px;">筛选条件：</label>
+                <select id="purchaseFilterInventoryId" style="width: 150px;">
+                    <option value="">全部物品</option>
+                </select>
+                <input type="date" id="purchaseFilterDate" style="width: 150px;">
+                <button class="btn-search" onclick="searchPurchase()">🔍 查询</button>
+                <button class="btn-cancel" onclick="resetPurchaseSearch()">🔄 重置</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <button class="btn-add" onclick="openAddPurchaseModal()">+ 新增采购记录</button>
+            </div>
+            <table id="purchaseTable">
+                <thead><tr><th>采购记录ID</th><th>物品ID</th><th>物品名称</th><th>数量</th><th>单价</th><th>总价</th><th>日期</th><th>操作</th></tr></thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr style="background: #fadbd8; font-weight: bold;">
+                        <td colspan="5" style="text-align: right; padding-right: 20px;">总支出：</td>
+                        <td id="totalExpenditure" style="color: #e74c3c; font-size: 16px;">¥0.00</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 </div>
 
 <!-- ================== 弹窗组件区 ================== -->
@@ -533,17 +599,6 @@
         <div class="form-group"><label>库存数量</label><input type="number" id="eiQty"></div>
         <div class="form-group"><label>警戒线</label><input type="number" id="eiThreshold"></div>
         <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editInvModal')">取消</button><button class="btn-add" onclick="submitEditInv()">保存</button></div>
-    </div>
-</div>
-
-<!-- 4.2 采购 -->
-<div id="purchaseModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">🛒 物品采购入库</div>
-        <input type="hidden" id="purId">
-        <p>正在采购：<b id="purName"></b></p>
-        <div class="form-group"><label>采购数量 (必须大于0)</label><input type="number" id="purCount" placeholder="输入数量"></div>
-        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('purchaseModal')">取消</button><button class="btn-search" style="background-color: #6610f2;" onclick="submitPurchase()">确认入库</button></div>
     </div>
 </div>
 
@@ -620,6 +675,22 @@
         <div class="form-group"><label>选择员工</label><select id="editExecEmployeeId"><option>加载中...</option></select></div>
         <div class="form-group"><label>服务日期</label><input type="date" id="editExecServiceDate"></div>
         <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editExecutionModal')">取消</button><button class="btn-add" onclick="submitEditExecution()">保存</button></div>
+    </div>
+</div>
+
+<!-- 9. 新增采购记录弹窗 -->
+<div id="addPurchaseModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">🛒 新增采购记录</div>
+        <div class="form-group">
+            <label>选择物品</label>
+            <select id="purchaseInventoryId">
+                <option value="">请选择物品...</option>
+            </select>
+        </div>
+        <div class="form-group"><label>采购数量</label><input type="number" id="purchaseQuantity" placeholder="输入数量（必须大于0）" min="1"></div>
+        <div class="form-group"><label>单价（元）</label><input type="number" id="purchaseUnitPrice" placeholder="输入单价（必须大于0）" step="0.01" min="0.01"></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('addPurchaseModal')">取消</button><button class="btn-add" onclick="submitPurchase()">保存</button></div>
     </div>
 </div>
 
@@ -702,6 +773,7 @@
         if(tabName === 'service') loadServices();
         if(tabName === 'appointment') loadApps();
         if(tabName === 'execution') loadExecutions();
+        if(tabName === 'financial') loadFinancial();
     }
 
     // 通用错误处理函数
@@ -854,9 +926,9 @@
     function renderInvTable(data){
         let h='';
         if(data.length===0)h='<tr><td colspan="6">暂无数据</td></tr>';
-        else data. forEach(i=>{
+        else data.forEach(i=>{
             let remarkStyle = i.remark&&i.remark.includes('不足')?'color:red':'color:green';
-            h+=`<tr><td>${i.id}</td><td>${i.name}</td><td>${i.quantity}</td><td>${i.threshold}</td><td style="${remarkStyle}">${i.remark||''}</td><td><button class="btn-search" style="background:#6610f2" onclick="openPurchase(${i.id},'${i.name}')">采购</button><button class="btn-edit" onclick="openInvModal(${i.id},'${i.name}',${i.quantity},${i.threshold})">修改</button><button class="btn-del" onclick="delInventory(${i.id})">删除</button></td></tr>`;
+            h+=`<tr><td>${i.id}</td><td>${i.name}</td><td>${i.quantity}</td><td>${i.threshold}</td><td style="${remarkStyle}">${i.remark||''}</td><td><button class="btn-edit" onclick="openInvModal(${i.id},'${i.name}',${i.quantity},${i.threshold})">修改</button><button class="btn-del" onclick="delInventory(${i.id})">删除</button></td></tr>`;
         });
         document.querySelector('#inventoryTable tbody').innerHTML=h;
     }
@@ -882,22 +954,10 @@
     function submitEditInv(){
         const id=document.getElementById('eiId').value,
               n=document.getElementById('eiName').value,
-              q=document. getElementById('eiQty').value,
+              q=document.getElementById('eiQty').value,
               t=document.getElementById('eiThreshold').value;
         if(q<0||t<0)return alert("数量不能为负数");
         fetch('/api/inventory',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name:n,quantity:q,threshold:t})}).then(()=>{alert("修改成功");closeModal('editInvModal');loadInventory();});
-    }
-    function openPurchase(id,n){
-        document.getElementById('purId').value=id;
-        document.getElementById('purName').innerText=n;
-        document. getElementById('purCount').value='';
-        document.getElementById('purchaseModal').style.display='block';
-    }
-    function submitPurchase(){
-        const id=document.getElementById('purId').value,
-              c=document.getElementById('purCount').value;
-        if(c<=0)return alert("采购数量必须大于0");
-        fetch(`/api/inventory/${id}/purchase`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({count:parseInt(c)})}).then(()=>{alert("采购成功");closeModal('purchaseModal');loadInventory();});
     }
     function delInventory(id){
         if(confirm('确定删除? ')) fetch('/api/inventory/'+id,{method:'DELETE'}).then(()=>loadInventory());
@@ -1314,6 +1374,235 @@
                 .then(() => {
                     alert("✅ 删除成功！");
                     loadExecutions();
+                })
+                .catch(e => {
+                    console.error('删除失败:', e);
+                    alert("❌ 删除失败，请重试");
+                });
+        }
+    }
+
+    // --- 财务管理 ---
+    function loadFinancial() {
+        // 加载服务收入
+        loadIncome();
+        // 加载采购支出
+        loadPurchase();
+        // 加载库存物品列表用于采购下拉选择
+        loadInventoryForPurchase();
+        // 加载筛选条件的下拉选项
+        loadIncomeFilters();
+    }
+
+    // 服务收入
+    function loadIncome() {
+        const memberId = document.getElementById('incomeFilterMemberId').value;
+        const serviceId = document.getElementById('incomeFilterServiceId').value;
+        const employeeId = document.getElementById('incomeFilterEmployeeId').value;
+        const serviceDate = document.getElementById('incomeFilterDate').value;
+        
+        let url = '/api/financial/income?';
+        if (memberId) url += `memberId=${memberId}&`;
+        if (serviceId) url += `serviceId=${serviceId}&`;
+        if (employeeId) url += `employeeId=${employeeId}&`;
+        if (serviceDate) url += `serviceDate=${serviceDate}&`;
+        
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                renderIncomeTable(data.records);
+                document.getElementById('totalIncome').innerText = '¥' + (data.totalIncome || 0).toFixed(2);
+            })
+            .catch(e => console.error('加载服务收入失败:', e));
+    }
+
+    function renderIncomeTable(records) {
+        let html = '';
+        if (records.length === 0) {
+            html = '<tr><td colspan="6" style="text-align:center">暂无服务收入记录</td></tr>';
+        } else {
+            records.forEach(r => {
+                html += `<tr>
+                    <td>${r.id}</td>
+                    <td>${r.memberId}</td>
+                    <td>${r.serviceId}</td>
+                    <td>${r.employeeId}</td>
+                    <td style="color:#27ae60; font-weight:bold;">¥${r.cost}</td>
+                    <td>${r.serviceDate}</td>
+                </tr>`;
+            });
+        }
+        document.querySelector('#incomeTable tbody').innerHTML = html;
+    }
+
+    function searchIncome() {
+        loadIncome();
+    }
+
+    function resetIncomeSearch() {
+        document.getElementById('incomeFilterMemberId').value = '';
+        document.getElementById('incomeFilterServiceId').value = '';
+        document.getElementById('incomeFilterEmployeeId').value = '';
+        document.getElementById('incomeFilterDate').value = '';
+        loadIncome();
+    }
+
+    function loadIncomeFilters() {
+        // 加载会员列表
+        fetch('/api/members')
+            .then(r => r.json())
+            .then(data => {
+                let html = '<option value="">全部会员</option>';
+                data.forEach(m => {
+                    html += `<option value="${m.id}">${m.id} - ${m.name}</option>`;
+                });
+                document.getElementById('incomeFilterMemberId').innerHTML = html;
+            });
+        
+        // 加载服务列表
+        fetch('/api/services')
+            .then(r => r.json())
+            .then(data => {
+                let html = '<option value="">全部服务</option>';
+                data.forEach(s => {
+                    html += `<option value="${s.id}">${s.id} - ${s.name}</option>`;
+                });
+                document.getElementById('incomeFilterServiceId').innerHTML = html;
+            });
+        
+        // 加载员工列表
+        fetch('/api/employees')
+            .then(r => r.json())
+            .then(data => {
+                let html = '<option value="">全部员工</option>';
+                data.forEach(e => {
+                    html += `<option value="${e.id}">${e.id} - ${e.name}</option>`;
+                });
+                document.getElementById('incomeFilterEmployeeId').innerHTML = html;
+            });
+    }
+
+    // 采购支出
+    function loadPurchase() {
+        const inventoryId = document.getElementById('purchaseFilterInventoryId').value;
+        const purchaseDate = document.getElementById('purchaseFilterDate').value;
+        
+        let url = '/api/financial/purchase?';
+        if (inventoryId) url += `inventoryId=${inventoryId}&`;
+        if (purchaseDate) url += `purchaseDate=${purchaseDate}&`;
+        
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                renderPurchaseTable(data.records);
+                document.getElementById('totalExpenditure').innerText = '¥' + (data.totalExpenditure || 0).toFixed(2);
+            })
+            .catch(e => console.error('加载采购记录失败:', e));
+    }
+
+    function renderPurchaseTable(records) {
+        let html = '';
+        if (records.length === 0) {
+            html = '<tr><td colspan="8" style="text-align:center">暂无采购记录</td></tr>';
+        } else {
+            records.forEach(r => {
+                html += `<tr>
+                    <td>${r.id}</td>
+                    <td>${r.inventoryId}</td>
+                    <td>${r.inventoryName}</td>
+                    <td>${r.quantity}</td>
+                    <td>¥${r.unitPrice}</td>
+                    <td style="color:#e74c3c; font-weight:bold;">¥${r.totalPrice}</td>
+                    <td>${r.purchaseDate}</td>
+                    <td><button class="btn-del" onclick="delPurchase(${r.id})">删除</button></td>
+                </tr>`;
+            });
+        }
+        document.querySelector('#purchaseTable tbody').innerHTML = html;
+    }
+
+    function searchPurchase() {
+        loadPurchase();
+    }
+
+    function resetPurchaseSearch() {
+        document.getElementById('purchaseFilterInventoryId').value = '';
+        document.getElementById('purchaseFilterDate').value = '';
+        loadPurchase();
+    }
+
+    function loadInventoryForPurchase() {
+        fetch('/api/inventory')
+            .then(r => r.json())
+            .then(data => {
+                let html = '<option value="">请选择物品...</option>';
+                data.forEach(i => {
+                    html += `<option value="${i.id}">${i.id} - ${i.name}</option>`;
+                });
+                document.getElementById('purchaseInventoryId').innerHTML = html;
+                // 也更新筛选条件的下拉框
+                let filterHtml = '<option value="">全部物品</option>';
+                data.forEach(i => {
+                    filterHtml += `<option value="${i.id}">${i.id} - ${i.name}</option>`;
+                });
+                document.getElementById('purchaseFilterInventoryId').innerHTML = filterHtml;
+            });
+    }
+
+    function openAddPurchaseModal() {
+        // 重置表单
+        document.getElementById('purchaseInventoryId').value = '';
+        document.getElementById('purchaseQuantity').value = '';
+        document.getElementById('purchaseUnitPrice').value = '';
+        document.getElementById('addPurchaseModal').style.display = 'block';
+    }
+
+    function submitPurchase() {
+        const inventoryId = document.getElementById('purchaseInventoryId').value;
+        const quantity = document.getElementById('purchaseQuantity').value;
+        const unitPrice = document.getElementById('purchaseUnitPrice').value;
+        
+        if (!inventoryId) {
+            return alert("请选择物品");
+        }
+        if (!quantity || quantity <= 0) {
+            return alert("采购数量必须大于0");
+        }
+        if (!unitPrice || unitPrice <= 0) {
+            return alert("单价必须大于0");
+        }
+        
+        fetch('/api/financial/purchase', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                inventoryId: parseInt(inventoryId),
+                quantity: parseInt(quantity),
+                unitPrice: parseFloat(unitPrice)
+            })
+        })
+        .then(async response => {
+            if (response.ok) {
+                alert("✅ 采购成功！库存已更新");
+                closeModal('addPurchaseModal');
+                loadPurchase();
+            } else {
+                const errorMsg = await handleApiError(response);
+                alert("❌ " + errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('采购失败:', error);
+            alert("❌ 网络错误，请检查网络连接后重试");
+        });
+    }
+
+    function delPurchase(id) {
+        if (confirm('确定删除此采购记录吗？注意：删除记录不会回退库存！')) {
+            fetch(`/api/financial/purchase/${id}`, {method: 'DELETE'})
+                .then(() => {
+                    alert("✅ 删除成功！");
+                    loadPurchase();
                 })
                 .catch(e => {
                     console.error('删除失败:', e);
