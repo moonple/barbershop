@@ -336,6 +336,7 @@
     <div class="menu-item" data-tab="inventory">📦 库存管理</div>
     <div class="menu-item" data-tab="service">💇 服务项目管理</div>
     <div class="menu-item" data-tab="appointment">📅 预约管理</div>
+    <div class="menu-item" data-tab="execution">✅ 服务执行管理</div>
     <div class="user-info">
         当前用户：<span id="currentAdminName">... </span>
         <span class="logout" onclick="logout()">退出</span>
@@ -456,6 +457,33 @@
             <tbody></tbody>
         </table>
     </div>
+
+    <!-- 7. 服务执行管理 -->
+    <div id="execution-section" class="module-section">
+        <h3>✅ 服务执行管理</h3>
+        <div class="search-box">
+            <label style="margin-right: 10px;">筛选条件：</label>
+            <select id="filterMemberId" style="width: 150px;">
+                <option value="">全部会员</option>
+            </select>
+            <select id="filterServiceId" style="width: 150px;">
+                <option value="">全部服务</option>
+            </select>
+            <select id="filterEmployeeId" style="width: 150px;">
+                <option value="">全部员工</option>
+            </select>
+            <input type="date" id="filterServiceDate" style="width: 150px;">
+            <button class="btn-search" onclick="searchExecution()">🔍 查询</button>
+            <button class="btn-cancel" onclick="resetExecutionSearch()">🔄 重置</button>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <button class="btn-add" onclick="openAddExecutionModal()">+ 新增服务执行记录</button>
+        </div>
+        <table id="executionTable">
+            <thead><tr><th>ID</th><th>会员ID</th><th>会员姓名</th><th>服务项目ID</th><th>服务项目名称</th><th>员工ID</th><th>员工姓名</th><th>费用</th><th>日期</th><th>操作</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <!-- ================== 弹窗组件区 ================== -->
@@ -570,6 +598,31 @@
     </div>
 </div>
 
+<!-- 7. 新增服务执行记录弹窗 -->
+<div id="addExecutionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✅ 新增服务执行记录</div>
+        <div class="form-group"><label>选择会员</label><select id="execMemberId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择服务项目</label><select id="execServiceId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择员工</label><select id="execEmployeeId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>服务日期</label><input type="date" id="execServiceDate"></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('addExecutionModal')">取消</button><button class="btn-add" onclick="submitExecution()">保存</button></div>
+    </div>
+</div>
+
+<!-- 8. 修改服务执行记录弹窗 -->
+<div id="editExecutionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">✏️ 修改服务执行记录</div>
+        <input type="hidden" id="editExecId">
+        <div class="form-group"><label>选择会员</label><select id="editExecMemberId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择服务项目</label><select id="editExecServiceId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>选择员工</label><select id="editExecEmployeeId"><option>加载中...</option></select></div>
+        <div class="form-group"><label>服务日期</label><input type="date" id="editExecServiceDate"></div>
+        <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('editExecutionModal')">取消</button><button class="btn-add" onclick="submitEditExecution()">保存</button></div>
+    </div>
+</div>
+
 <script>
     let currentAdmin = null;
     const PHONE_REGEX = /^1[3-9]\d{9}$/;
@@ -648,6 +701,7 @@
         if(tabName === 'inventory') loadInventory();
         if(tabName === 'service') loadServices();
         if(tabName === 'appointment') loadApps();
+        if(tabName === 'execution') loadExecutions();
     }
 
     // 通用错误处理函数
@@ -1019,6 +1073,253 @@
     function delApp(id) {
         if(confirm('删除不可恢复, 确定? '))
             fetch('/api/appointments/'+id,{method:'DELETE'}).then(()=>loadApps());
+    }
+
+    // --- 服务执行管理 ---
+    function loadExecutions() {
+        // 清空筛选条件
+        document.getElementById('filterMemberId').value = '';
+        document.getElementById('filterServiceId').value = '';
+        document.getElementById('filterEmployeeId').value = '';
+        document.getElementById('filterServiceDate').value = '';
+        
+        // 加载筛选下拉框数据
+        Promise.all([
+            fetch('/api/members').then(r=>r.json()),
+            fetch('/api/services').then(r=>r.json()),
+            fetch('/api/employees').then(r=>r.json())
+        ]).then(([members, services, employees]) => {
+            // 填充会员下拉框
+            let memberOptions = '<option value="">全部会员</option>';
+            members.forEach(m => memberOptions += `<option value="${m.id}">${m.name} (ID:${m.id})</option>`);
+            document.getElementById('filterMemberId').innerHTML = memberOptions;
+            
+            // 填充服务下拉框
+            let serviceOptions = '<option value="">全部服务</option>';
+            services.forEach(s => serviceOptions += `<option value="${s.id}">${s.name} (ID:${s.id})</option>`);
+            document.getElementById('filterServiceId').innerHTML = serviceOptions;
+            
+            // 填充员工下拉框
+            let employeeOptions = '<option value="">全部员工</option>';
+            employees.forEach(e => employeeOptions += `<option value="${e.id}">${e.name} (ID:${e.id})</option>`);
+            document.getElementById('filterEmployeeId').innerHTML = employeeOptions;
+        }).catch(e => console.error('加载筛选数据失败:', e));
+        
+        // 加载执行记录列表
+        fetch('/api/service-executions')
+            .then(r => r.json())
+            .then(renderExecutionTable)
+            .catch(e => console.error('加载服务执行记录失败:', e));
+    }
+
+    function renderExecutionTable(data) {
+        let html = '';
+        if (data.length === 0) {
+            html = '<tr><td colspan="10" style="text-align:center">暂无服务执行记录</td></tr>';
+        } else {
+            data.forEach(exec => {
+                html += `<tr>
+                    <td>${exec.id}</td>
+                    <td>${exec.memberId}</td>
+                    <td>${exec.memberName}</td>
+                    <td>${exec.serviceId}</td>
+                    <td>${exec.serviceName}</td>
+                    <td>${exec.employeeId}</td>
+                    <td>${exec.employeeName || '-'}</td>
+                    <td style="color:#d35400;font-weight:bold">¥${exec.cost}</td>
+                    <td>${exec.serviceDate}</td>
+                    <td>
+                        <button class="btn-edit" onclick="openEditExecutionModal(${exec.id})">修改</button>
+                        <button class="btn-del" onclick="delExecution(${exec.id})">删除</button>
+                    </td>
+                </tr>`;
+            });
+        }
+        document.querySelector('#executionTable tbody').innerHTML = html;
+    }
+
+    function searchExecution() {
+        const memberId = document.getElementById('filterMemberId').value;
+        const serviceId = document.getElementById('filterServiceId').value;
+        const employeeId = document.getElementById('filterEmployeeId').value;
+        const serviceDate = document.getElementById('filterServiceDate').value;
+        
+        // 构建查询参数
+        let params = new URLSearchParams();
+        if (memberId) params.append('memberId', memberId);
+        if (serviceId) params.append('serviceId', serviceId);
+        if (employeeId) params.append('employeeId', employeeId);
+        if (serviceDate) params.append('serviceDate', serviceDate);
+        
+        const url = '/api/service-executions/search' + (params.toString() ? '?' + params.toString() : '');
+        fetch(url)
+            .then(r => r.json())
+            .then(renderExecutionTable)
+            .catch(e => console.error('查询失败:', e));
+    }
+
+    function resetExecutionSearch() {
+        loadExecutions();
+    }
+
+    function openAddExecutionModal() {
+        // 设置默认日期为今天
+        document.getElementById('execServiceDate').valueAsDate = new Date();
+        
+        // 加载会员、服务、员工下拉框
+        Promise.all([
+            fetch('/api/members').then(r => r.json()),
+            fetch('/api/services').then(r => r.json()),
+            fetch('/api/employees').then(r => r.json())
+        ]).then(([members, services, employees]) => {
+            let memberHtml = '<option value="">--请选择会员--</option>';
+            members.forEach(m => memberHtml += `<option value="${m.id}">${m.name}</option>`);
+            document.getElementById('execMemberId').innerHTML = memberHtml;
+            
+            let serviceHtml = '<option value="">--请选择服务--</option>';
+            services.forEach(s => serviceHtml += `<option value="${s.id}">${s.name} (¥${s.price})</option>`);
+            document.getElementById('execServiceId').innerHTML = serviceHtml;
+            
+            let employeeHtml = '<option value="">--请选择员工--</option>';
+            employees.forEach(e => employeeHtml += `<option value="${e.id}">${e.name}</option>`);
+            document.getElementById('execEmployeeId').innerHTML = employeeHtml;
+            
+            document.getElementById('addExecutionModal').style.display = 'block';
+        }).catch(e => console.error('加载数据失败:', e));
+    }
+
+    function submitExecution() {
+        const memberId = document.getElementById('execMemberId').value;
+        const serviceId = document.getElementById('execServiceId').value;
+        const employeeId = document.getElementById('execEmployeeId').value;
+        const serviceDate = document.getElementById('execServiceDate').value;
+        
+        if (!memberId || !serviceId || !employeeId) {
+            return alert("请填写所有必填项（会员、服务项目、员工）");
+        }
+        
+        fetch('/api/service-executions', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                memberId: memberId,
+                serviceId: serviceId,
+                employeeId: employeeId,
+                serviceDate: serviceDate || null
+            })
+        })
+        .then(async response => {
+            if (response.ok) {
+                alert("✅ 新增成功！");
+                closeModal('addExecutionModal');
+                loadExecutions();
+            } else {
+                const errorMsg = await handleApiError(response);
+                alert("❌ " + errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('新增失败:', error);
+            alert("❌ 网络错误，请检查网络连接后重试");
+        });
+    }
+
+    function openEditExecutionModal(id) {
+        // 先获取当前记录
+        fetch('/api/service-executions')
+            .then(r => r.json())
+            .then(executions => {
+                const exec = executions.find(e => e.id === id);
+                if (!exec) {
+                    alert("记录不存在");
+                    return;
+                }
+                
+                document.getElementById('editExecId').value = exec.id;
+                document.getElementById('editExecServiceDate').value = exec.serviceDate;
+                
+                // 加载下拉框并设置当前值
+                Promise.all([
+                    fetch('/api/members').then(r => r.json()),
+                    fetch('/api/services').then(r => r.json()),
+                    fetch('/api/employees').then(r => r.json())
+                ]).then(([members, services, employees]) => {
+                    let memberHtml = '<option value="">--请选择会员--</option>';
+                    members.forEach(m => {
+                        const selected = m.id === exec.memberId ? 'selected' : '';
+                        memberHtml += `<option value="${m.id}" ${selected}>${m.name}</option>`;
+                    });
+                    document.getElementById('editExecMemberId').innerHTML = memberHtml;
+                    
+                    let serviceHtml = '<option value="">--请选择服务--</option>';
+                    services.forEach(s => {
+                        const selected = s.id === exec.serviceId ? 'selected' : '';
+                        serviceHtml += `<option value="${s.id}" ${selected}>${s.name} (¥${s.price})</option>`;
+                    });
+                    document.getElementById('editExecServiceId').innerHTML = serviceHtml;
+                    
+                    let employeeHtml = '<option value="">--请选择员工--</option>';
+                    employees.forEach(e => {
+                        const selected = e.id === exec.employeeId ? 'selected' : '';
+                        employeeHtml += `<option value="${e.id}" ${selected}>${e.name}</option>`;
+                    });
+                    document.getElementById('editExecEmployeeId').innerHTML = employeeHtml;
+                    
+                    document.getElementById('editExecutionModal').style.display = 'block';
+                }).catch(e => console.error('加载数据失败:', e));
+            })
+            .catch(e => console.error('获取记录失败:', e));
+    }
+
+    function submitEditExecution() {
+        const id = document.getElementById('editExecId').value;
+        const memberId = document.getElementById('editExecMemberId').value;
+        const serviceId = document.getElementById('editExecServiceId').value;
+        const employeeId = document.getElementById('editExecEmployeeId').value;
+        const serviceDate = document.getElementById('editExecServiceDate').value;
+        
+        if (!memberId || !serviceId || !employeeId) {
+            return alert("请填写所有必填项（会员、服务项目、员工）");
+        }
+        
+        fetch(`/api/service-executions/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                memberId: memberId,
+                serviceId: serviceId,
+                employeeId: employeeId,
+                serviceDate: serviceDate || null
+            })
+        })
+        .then(async response => {
+            if (response.ok) {
+                alert("✅ 修改成功！");
+                closeModal('editExecutionModal');
+                loadExecutions();
+            } else {
+                const errorMsg = await handleApiError(response);
+                alert("❌ " + errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('修改失败:', error);
+            alert("❌ 网络错误，请检查网络连接后重试");
+        });
+    }
+
+    function delExecution(id) {
+        if (confirm('确定删除此服务执行记录吗？删除后不可恢复！')) {
+            fetch(`/api/service-executions/${id}`, {method: 'DELETE'})
+                .then(() => {
+                    alert("✅ 删除成功！");
+                    loadExecutions();
+                })
+                .catch(e => {
+                    console.error('删除失败:', e);
+                    alert("❌ 删除失败，请重试");
+                });
+        }
     }
 
 </script>
