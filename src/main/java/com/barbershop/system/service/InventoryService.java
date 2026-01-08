@@ -36,14 +36,6 @@ public class InventoryService {
         return inventoryRepository.save(old);
     }
 
-    // 采购 (增加库存)
-    public void purchase(Integer id, Integer count) {
-        Inventory item = inventoryRepository.findById(id).orElseThrow();
-        item.setQuantity(item.getQuantity() + count);
-        item.updateRemark(); // 重新计算备注
-        inventoryRepository.save(item);
-    }
-
     public void delete(Integer id) {
         inventoryRepository.deleteById(id);
     }

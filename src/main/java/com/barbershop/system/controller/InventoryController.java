@@ -39,15 +39,6 @@ public class InventoryController {
         inventoryService.delete(id);
     }
 
-    @PostMapping("/{id}/purchase")
-    public void purchase(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
-        Integer count = body.get("count");
-        if (count == null || count < 1) {
-            throw new RuntimeException("采购数量必须大于0");
-        }
-        inventoryService.purchase(id, count);
-    }
-
     @GetMapping("/search")
     public List<Inventory> search(@RequestParam String keyword) {
         if(keyword == null || keyword.isEmpty()) return inventoryService.findAll();
