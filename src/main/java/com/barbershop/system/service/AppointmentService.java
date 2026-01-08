@@ -24,6 +24,7 @@ public class AppointmentService {
     @Autowired private EmployeeRepository employeeRepository;
     @Autowired private ServiceItemRepository serviceItemRepository;
     @Autowired private InventoryRepository inventoryRepository;
+    @Autowired private ServiceExecutionService serviceExecutionService;
 
     public List<Appointment> findAll() { return appointmentRepository. findAll(); }
 
@@ -78,6 +79,18 @@ public class AppointmentService {
 
         // 扣库存
         deductInventory(app.getServiceId());
+
+        // 自动创建服务执行记录（带幂等性控制）
+        serviceExecutionService.createFromAppointment(
+            app.getId(),
+            app.getMemberId(),
+            app.getMemberName(),
+            app.getServiceId(),
+            app.getServiceName(),
+            app.getEmployeeId(),
+            app.getEmployeeName(),
+            app.getAppointmentDate()
+        );
     }
 
     public void cancel(Integer id) {
