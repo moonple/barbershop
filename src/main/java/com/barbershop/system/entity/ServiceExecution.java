@@ -35,5 +35,6 @@ public class ServiceExecution {
     private LocalDate serviceDate;
 
     // 关联的预约ID（用于幂等性控制，避免重复插入）
+    @Column(unique = true)
     private Integer appointmentId;
 }
