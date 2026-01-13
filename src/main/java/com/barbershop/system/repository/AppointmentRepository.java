@@ -9,14 +9,14 @@ import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
 
-    // 修复 searchByKeyword 报错
+
     @Query("SELECT a FROM Appointment a WHERE CAST(a.id AS string) LIKE %?1% OR CAST(a.memberId AS string) LIKE %?1% OR CAST(a.employeeId AS string) LIKE %?1%")
     List<Appointment> searchByKeyword(String keyword);
 
-    // 修复 findByAppointmentDate 报错
+
     List<Appointment> findByAppointmentDate(LocalDate date);
 
-    // 冲突检测
+
     @Query("SELECT a FROM Appointment a WHERE a.employeeId = ?1 AND a.status <> '已取消' AND a.startTime < ?3 AND a.endTime > ?2")
     List<Appointment> findConflicts(Integer empId, LocalDateTime newStart, LocalDateTime newEnd);
 }

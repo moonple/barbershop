@@ -18,10 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 财务管理控制器
- * 包含服务收入和采购支出两个模块
- */
+
 @RestController
 @RequestMapping("/api/financial")
 public class FinancialController {
@@ -37,9 +34,6 @@ public class FinancialController {
 
     // ==================== 服务收入模块 ====================
 
-    /**
-     * 查询服务收入记录（复用服务执行记录）
-     */
     @GetMapping("/income")
     public ResponseEntity<Map<String, Object>> getIncomeRecords(
             @RequestParam(required = false) Integer memberId,
@@ -59,9 +53,7 @@ public class FinancialController {
 
     // ==================== 采购支出模块 ====================
 
-    /**
-     * 查询采购记录
-     */
+
     @GetMapping("/purchase")
     public ResponseEntity<Map<String, Object>> getPurchaseRecords(
             @RequestParam(required = false) Integer inventoryId,
@@ -77,9 +69,7 @@ public class FinancialController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 新增采购记录（同时更新库存）
-     */
+
     @PostMapping("/purchase")
     @Transactional
     public ResponseEntity<?> addPurchase(@RequestBody Map<String, Object> params) {
@@ -106,7 +96,7 @@ public class FinancialController {
             record.setQuantity(quantity);
             record.setUnitPrice(unitPrice);
             
-            // 保存采购记录（会自动计算totalPrice和设置purchaseDate）
+            // 保存采购记录
             PurchaseRecord savedRecord = purchaseRecordRepository.save(record);
 
             // 更新库存数量
@@ -126,9 +116,7 @@ public class FinancialController {
         }
     }
 
-    /**
-     * 删除采购记录（注意：不会回退库存）
-     */
+
     @DeleteMapping("/purchase/{id}")
     @Transactional
     public ResponseEntity<?> deletePurchase(@PathVariable Integer id) {

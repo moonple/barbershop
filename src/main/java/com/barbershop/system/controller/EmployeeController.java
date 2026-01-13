@@ -20,10 +20,9 @@ public class EmployeeController {
         return employeeRepository.findAll();
     }
 
-    // 添加员工 (带校验)
     @PostMapping
     public Employee add(@RequestBody Employee emp) {
-        // 1. 非空校验 (注意：要用 trim().isEmpty() 来防空格)
+        // trim().isEmpty()
         if (emp.getName() == null || emp.getName().trim().isEmpty()) {
             throw new RuntimeException("员工姓名不能为空");
         }
@@ -36,7 +35,6 @@ public class EmployeeController {
             throw new RuntimeException("手机号格式错误");
         }
 
-        // 3. 查重校验 (可选，防止添加重复员工)
         if (!employeeRepository.findByPhone(emp.getPhone()).isEmpty()) {
             throw new RuntimeException("该手机号已绑定其他员工");
         }
@@ -49,34 +47,31 @@ public class EmployeeController {
         employeeRepository.deleteById(id);
     }
 
-    // 搜索接口：支持按工号搜索 或 按手机号搜索
+    // 搜索接口
     @GetMapping("/search")
     public List<Employee> search(@RequestParam String keyword) {
-        // 1. 尝试看看是不是数字，如果是数字可能是查ID
         if (keyword.matches("\\d+")) {
-            // 先按ID查，如果ID没有，再按手机号查
             return employeeRepository.findById(Integer.valueOf(keyword))
-                    .map(List::of) // 这里的 List::of 需要 JDK9+，如果报错改成 Collections.singletonList
+                    .map(List::of)
                     .orElseGet(() -> employeeRepository.findByPhone(keyword));
         } else {
-            // 否则按手机号查
             return employeeRepository.findByPhone(keyword);
         }
     }
 
 
-    // [新增] 修改员工信息接口
+
     @PutMapping("/{id}")
     public Employee update(@PathVariable Integer id, @RequestBody Employee newEmp) {
         Employee oldEmp = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("员工不存在"));
 
-        // 局部更新逻辑
+
         if (newEmp.getName() != null && !newEmp.getName().isEmpty()) {
             oldEmp.setName(newEmp.getName());
         }
         if (newEmp.getPhone() != null && !newEmp.getPhone().isEmpty()) {
-            // 这里也可以加查重逻辑，暂时省略
+
             oldEmp.setPhone(newEmp.getPhone());
         }
         if (newEmp.getGender() != null && !newEmp.getGender().isEmpty()) {

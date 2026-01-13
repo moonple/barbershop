@@ -16,7 +16,6 @@ public class AdminController {
     @Autowired
     private AdminRepository adminRepository;
 
-    // 系统启动时，如果没有任何管理员，自动创建一个超级管理员
     // 账号：13800000000，密码：123456
     @PostConstruct
     public void initSuperAdmin() {
@@ -68,7 +67,6 @@ public class AdminController {
     }
 
     // 3. 添加管理员
-    // 3. 添加管理员（增强版校验）
     @PostMapping
     public Admin add(@RequestBody Admin admin) {
         // 1. 非空校验
@@ -97,7 +95,6 @@ public class AdminController {
     }
 
     // 4. 修改管理员信息
-    // 4. 修改管理员信息
     @PutMapping
     public Admin update(@RequestBody Admin admin) {
         // 1. 检查 ID 是否存在
@@ -121,7 +118,6 @@ public class AdminController {
     }
 
     // 5. 删除管理员 (带防自删校验)
-    // URL参数 need: /api/admins/5?currentAdminId=1
     @DeleteMapping("/{targetId}")
     public void delete(@PathVariable Integer targetId, @RequestParam Integer currentAdminId) {
         if (targetId.equals(currentAdminId)) {

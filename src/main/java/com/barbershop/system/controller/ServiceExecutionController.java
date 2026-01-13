@@ -12,9 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 服务执行管理控制器
- */
+
 @RestController
 @RequestMapping("/api/service-executions")
 public class ServiceExecutionController {
@@ -22,18 +20,12 @@ public class ServiceExecutionController {
     @Autowired
     private ServiceExecutionService serviceExecutionService;
 
-    /**
-     * 获取所有服务执行记录
-     */
+
     @GetMapping
     public List<ServiceExecution> getAll() {
         return serviceExecutionService.findAll();
     }
 
-    /**
-     * 根据条件查询服务执行记录
-     * 支持按会员ID、服务ID、员工ID、日期进行单独或组合查询
-     */
     @GetMapping("/search")
     public List<ServiceExecution> search(
             @RequestParam(required = false) Integer memberId,
@@ -43,9 +35,7 @@ public class ServiceExecutionController {
         return serviceExecutionService.findByFilters(memberId, serviceId, employeeId, serviceDate);
     }
 
-    /**
-     * 新增服务执行记录
-     */
+
     @PostMapping
     public ResponseEntity<?> add(@RequestBody Map<String, Object> params) {
         try {
@@ -72,9 +62,6 @@ public class ServiceExecutionController {
         }
     }
 
-    /**
-     * 修改服务执行记录
-     */
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> params) {
         try {
@@ -104,9 +91,7 @@ public class ServiceExecutionController {
         }
     }
 
-    /**
-     * 删除服务执行记录
-     */
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
         try {

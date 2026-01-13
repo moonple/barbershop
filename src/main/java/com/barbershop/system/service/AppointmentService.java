@@ -40,7 +40,7 @@ public class AppointmentService {
         Member m = memberRepository.findById(mId).orElseThrow(() -> new RuntimeException("会员不存在"));
         Employee e = employeeRepository.findById(eId).orElseThrow(() -> new RuntimeException("员工不存在"));
 
-        // ✅ 修复：添加变量名 s
+
         ServiceItem s = serviceItemRepository.findById(sId).orElseThrow(() -> new RuntimeException("服务不存在"));
 
         LocalDateTime start = LocalDateTime.of(date, LocalTime. of(startHour, 0));
@@ -113,7 +113,7 @@ public class AppointmentService {
     }
 
     private void deductInventory(Integer sId) {
-        // ✅ 修复：添加变量名 s
+
         ServiceItem s = serviceItemRepository.findById(sId).orElse(null);
         if (s != null && s.getConsumeItemIds() != null && !s.getConsumeItemIds().isEmpty()) {
             for (String idStr : s. getConsumeItemIds().split(",")) {

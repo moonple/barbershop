@@ -30,13 +30,12 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-    // --- 修复重点：修改会员逻辑 ---
+    // 修改会员
     public Member updateMember(Integer id, Member newInfo) {
-        // 1. 先查出数据库里的老数据
+
         Member oldMember = memberRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("会员不存在"));
 
-        // 2. 如果前端传了新值，就更新；没传（或为空），就保持原样
         if (newInfo.getName() != null && !newInfo.getName().trim().isEmpty()) {
             oldMember.setName(newInfo.getName());
         }
@@ -47,7 +46,6 @@ public class MemberService {
             oldMember.setGender(newInfo.getGender());
         }
 
-        // 3. 保存更新后的对象
         return memberRepository.save(oldMember);
     }
 
@@ -55,7 +53,7 @@ public class MemberService {
         memberRepository.deleteById(id);
     }
 
-    // 充值逻辑 (保留 - 原充值方法，记录财务流水)
+    // 充值逻
     @Transactional
     public void recharge(Integer memberId, BigDecimal amount) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("会员不存在"));
@@ -69,7 +67,7 @@ public class MemberService {
         financialRecordRepository.save(record);
     }
 
-    // 简单充值逻辑 (不记录财务流水)
+    // 简单充值逻辑
     @Transactional
     public void simpleRecharge(Integer memberId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -84,7 +82,7 @@ public class MemberService {
         memberRepository.save(member);
     }
 
-    // 扣除余额逻辑
+    // 扣除余额
     @Transactional
     public void deductBalance(Integer memberId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -95,7 +93,7 @@ public class MemberService {
         if (currentBalance == null) {
             currentBalance = BigDecimal.ZERO;
         }
-        // 允许余额为负数，不做余额不足检查
+
         member.setBalance(currentBalance.subtract(amount));
         memberRepository.save(member);
     }
@@ -105,7 +103,7 @@ public class MemberService {
     }
 
     public List<Member> searchMembers(String keyword) {
-        // 调用刚才在 Repository 里写的方法
+
         return memberRepository.findByPhoneContaining(keyword);
     }
 }

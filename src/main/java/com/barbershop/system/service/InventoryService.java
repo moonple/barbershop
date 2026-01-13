@@ -32,7 +32,7 @@ public class InventoryService {
         if (item.getQuantity() != null) old.setQuantity(item.getQuantity());
         if (item.getThreshold() != null) old.setThreshold(item.getThreshold());
 
-        old.updateRemark(); // 重新计算备注
+        old.updateRemark();
         return inventoryRepository.save(old);
     }
 
@@ -43,11 +43,9 @@ public class InventoryService {
     // 搜索 (ID 或 名称)
     public List<Inventory> search(String keyword) {
         if (keyword.matches("\\d+")) {
-            // 如果是纯数字，先按ID查
             Optional<Inventory> byId = inventoryRepository.findById(Integer.parseInt(keyword));
             if (byId.isPresent()) return List.of(byId.get());
         }
-        // 否则按名称查
         return inventoryRepository.findByNameContaining(keyword);
     }
 }

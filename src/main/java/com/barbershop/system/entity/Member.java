@@ -5,8 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// @Entity 告诉 Spring Boot 这是一个数据库实体
-// @Data 是 Lombok 插件，自动帮你生成 get/set 方法
+
 @Entity
 @Data
 public class Member {

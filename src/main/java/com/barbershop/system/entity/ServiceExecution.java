@@ -5,10 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * 服务执行记录实体
- * 用于记录每次服务的实际执行情况
- */
+
 @Entity
 @Data
 public class ServiceExecution {

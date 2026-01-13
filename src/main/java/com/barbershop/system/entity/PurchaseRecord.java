@@ -5,10 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * 采购记录实体
- * 用于记录物品的采购历史
- */
+
 @Entity
 @Data
 public class PurchaseRecord {

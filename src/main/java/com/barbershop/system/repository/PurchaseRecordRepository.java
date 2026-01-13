@@ -9,9 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 采购记录数据访问接口
- */
+
 public interface PurchaseRecordRepository extends JpaRepository<PurchaseRecord, Integer> {
     
     // 根据物品ID查询
@@ -20,7 +18,7 @@ public interface PurchaseRecordRepository extends JpaRepository<PurchaseRecord, 
     // 根据日期查询
     List<PurchaseRecord> findByPurchaseDate(LocalDate date);
     
-    // 组合查询（支持null值）
+    // 组合查询
     @Query("SELECT pr FROM PurchaseRecord pr WHERE " +
            "(:inventoryId IS NULL OR pr.inventoryId = :inventoryId) AND " +
            "(:purchaseDate IS NULL OR pr.purchaseDate = :purchaseDate)")

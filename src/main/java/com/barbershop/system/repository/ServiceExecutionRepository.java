@@ -10,9 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 服务执行记录数据访问接口
- */
+
 public interface ServiceExecutionRepository extends JpaRepository<ServiceExecution, Integer> {
     
     // 根据预约ID查找（用于幂等性检查）
