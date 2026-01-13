@@ -237,6 +237,14 @@
       background: #138496;
   }
 
+  .btn-recharge {
+      background: #17a2b8;
+  }
+
+  .btn-recharge:hover {
+      background: #138496;
+  }
+
   .btn-cancel {
       background: #6c757d;
   }
@@ -566,6 +574,31 @@
     </div>
 </div>
 
+<!-- 会员余额充值 -->
+<div id="rechargeMemberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">💰 会员余额充值</div>
+        <input type="hidden" id="rechargeMemId">
+        <div class="form-group">
+            <label>会员姓名</label>
+            <input type="text" id="rechargeMemName" readonly style="background:#f0f0f0">
+        </div>
+        <div class="form-group">
+            <label>当前余额</label>
+            <input type="text" id="rechargeMemBalance" readonly style="background:#f0f0f0">
+        </div>
+        <div class="form-group">
+            <label>充值金额 <span style="color:red">*</span></label>
+            <input type="number" id="rechargeAmount" placeholder="请输入充值金额" min="0.01" step="0.01">
+            <small style="color:#666">充值金额必须大于0</small>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('rechargeMemberModal')">取消</button>
+            <button class="btn-add" onclick="submitRecharge()">确认充值</button>
+        </div>
+    </div>
+</div>
+
 <!-- 2. 员工修改 -->
 <div id="editEmpModal" class="modal">
     <div class="modal-content">
@@ -797,7 +830,7 @@
     function renderMemberTable(data) {
         let h = '';
         if(data.length===0) h='<tr><td colspan="6">暂无数据</td></tr>';
-        else data.forEach(m => h+=`<tr><td>${m.id}</td><td>${m. name}</td><td>${m. phone}</td><td>${m. gender}</td><td>¥${m.balance}</td><td><button class="btn-edit" onclick="openMemberModal('${m.id}','${m.name}','${m.phone}','${m.gender}')">修改</button><button class="btn-del" onclick="delMember(${m.id})">删除</button></td></tr>`);
+        else data.forEach(m => h+=`<tr><td>${m.id}</td><td>${m. name}</td><td>${m. phone}</td><td>${m. gender}</td><td>¥${m.balance}</td><td><button class="btn-edit" onclick="openMemberModal('${m.id}','${m.name}','${m.phone}','${m.gender}')">修改</button><button class="btn-recharge" onclick="openRechargeModal(${m.id},'${m.name}',${m.balance})">💰充值</button><button class="btn-del" onclick="delMember(${m.id})">删除</button></td></tr>`);
         document.querySelector('#memberTable tbody').innerHTML = h;
     }
     function searchMember() {
@@ -835,6 +868,50 @@
     }
     function delMember(id){
         if(confirm('确定删除? ')) fetch('/api/members/'+id,{method:'DELETE'}).then(()=>loadMembers());
+    }
+
+    // 打开充值弹窗
+    function openRechargeModal(id, name, balance) {
+        document.getElementById('rechargeMemId').value = id;
+        document.getElementById('rechargeMemName').value = name;
+        document.getElementById('rechargeMemBalance').value = '¥' + balance;
+        document.getElementById('rechargeAmount').value = '';
+        document.getElementById('rechargeMemberModal').style.display = 'block';
+    }
+
+    // 提交充值
+    function submitRecharge() {
+        const id = document.getElementById('rechargeMemId').value;
+        const amountStr = document.getElementById('rechargeAmount').value;
+        
+        if (!amountStr || amountStr.trim() === '') {
+            return alert("请输入充值金额");
+        }
+        
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            return alert("充值金额必须大于0");
+        }
+        
+        fetch('/api/members/' + id + '/simple-recharge', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({amount: amount})
+        })
+        .then(async response => {
+            if (response.ok) {
+                alert("✅ 充值成功！");
+                closeModal('rechargeMemberModal');
+                loadMembers();
+            } else {
+                const errorMsg = await handleApiError(response);
+                alert("❌ " + errorMsg);
+            }
+        })
+        .catch(error => {
+            console.error('充值失败:', error);
+            alert("❌ 网络错误，请检查网络连接后重试");
+        });
     }
 
     // --- 员工 ---

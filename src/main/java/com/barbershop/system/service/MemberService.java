@@ -55,7 +55,7 @@ public class MemberService {
         memberRepository.deleteById(id);
     }
 
-    // 充值逻辑 (保留)
+    // 充值逻辑 (保留 - 原充值方法，记录财务流水)
     @Transactional
     public void recharge(Integer memberId, BigDecimal amount) {
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("会员不存在"));
@@ -67,6 +67,37 @@ public class MemberService {
         record.setType("充值");
         record.setAmount(amount);
         financialRecordRepository.save(record);
+    }
+
+    // 简单充值逻辑 (不记录财务流水)
+    @Transactional
+    public void simpleRecharge(Integer memberId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("充值金额必须大于0");
+        }
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("会员不存在"));
+        BigDecimal currentBalance = member.getBalance();
+        if (currentBalance == null) {
+            currentBalance = BigDecimal.ZERO;
+        }
+        member.setBalance(currentBalance.add(amount));
+        memberRepository.save(member);
+    }
+
+    // 扣除余额逻辑
+    @Transactional
+    public void deductBalance(Integer memberId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("扣费金额必须大于0");
+        }
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("会员不存在"));
+        BigDecimal currentBalance = member.getBalance();
+        if (currentBalance == null) {
+            currentBalance = BigDecimal.ZERO;
+        }
+        // 允许余额为负数，不做余额不足检查
+        member.setBalance(currentBalance.subtract(amount));
+        memberRepository.save(member);
     }
 
     public List<FinancialRecord> getMemberRecords(Integer memberId) {

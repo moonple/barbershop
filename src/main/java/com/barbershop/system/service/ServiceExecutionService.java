@@ -34,6 +34,9 @@ public class ServiceExecutionService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Autowired
+    private MemberService memberService;
+
     /**
      * 查询所有服务执行记录
      */
@@ -83,7 +86,13 @@ public class ServiceExecutionService {
         execution.setCost(serviceItem.getPrice());
         execution.setServiceDate(serviceDate != null ? serviceDate : LocalDate.now());
 
-        return serviceExecutionRepository.save(execution);
+        // 保存执行记录
+        ServiceExecution savedExecution = serviceExecutionRepository.save(execution);
+
+        // 扣除会员余额
+        memberService.deductBalance(memberId, serviceItem.getPrice());
+
+        return savedExecution;
     }
 
     /**
@@ -144,7 +153,7 @@ public class ServiceExecutionService {
         // 检查是否已存在该预约的执行记录（幂等性控制）
         Optional<ServiceExecution> existing = serviceExecutionRepository.findByAppointmentId(appointmentId);
         if (existing.isPresent()) {
-            return existing.get(); // 已存在，直接返回
+            return existing.get(); // 已存在，直接返回，不重复扣费
         }
 
         // 获取服务项目费用
@@ -163,6 +172,12 @@ public class ServiceExecutionService {
         execution.setCost(serviceItem.getPrice());
         execution.setServiceDate(serviceDate != null ? serviceDate : LocalDate.now());
 
-        return serviceExecutionRepository.save(execution);
+        // Save execution record
+        ServiceExecution savedExecution = serviceExecutionRepository.save(execution);
+
+        // Deduct member balance (only when creating new record, not on duplicate)
+        memberService.deductBalance(memberId, serviceItem.getPrice());
+
+        return savedExecution;
     }
 }
