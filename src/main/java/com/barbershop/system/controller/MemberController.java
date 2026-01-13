@@ -57,6 +57,12 @@ public class MemberController {
         memberService.recharge(id, body.get("amount"));
     }
 
+    // 简单充值接口 (不记录财务流水)
+    @PostMapping("/{id}/simple-recharge")
+    public void simpleRecharge(@PathVariable Integer id, @RequestBody Map<String, BigDecimal> body) {
+        memberService.simpleRecharge(id, body.get("amount"));
+    }
+
     @GetMapping("/{id}/records")
     public List<FinancialRecord> getRecords(@PathVariable Integer id) {
         return memberService.getMemberRecords(id);
