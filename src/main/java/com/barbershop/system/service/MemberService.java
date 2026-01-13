@@ -87,8 +87,8 @@ public class MemberService {
     // 扣除余额逻辑
     @Transactional
     public void deductBalance(Integer memberId, BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("扣费金额不能为负数");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("扣费金额必须大于0");
         }
         Member member = memberRepository.findById(memberId).orElseThrow(() -> new RuntimeException("会员不存在"));
         BigDecimal currentBalance = member.getBalance();

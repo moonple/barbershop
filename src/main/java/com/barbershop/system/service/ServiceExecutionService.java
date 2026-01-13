@@ -172,10 +172,10 @@ public class ServiceExecutionService {
         execution.setCost(serviceItem.getPrice());
         execution.setServiceDate(serviceDate != null ? serviceDate : LocalDate.now());
 
-        // 保存执行记录
+        // Save execution record
         ServiceExecution savedExecution = serviceExecutionRepository.save(execution);
 
-        // 扣除会员余额（仅在创建新记录时扣费）
+        // Deduct member balance (only when creating new record, not on duplicate)
         memberService.deductBalance(memberId, serviceItem.getPrice());
 
         return savedExecution;

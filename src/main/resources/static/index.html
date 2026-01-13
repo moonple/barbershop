@@ -237,6 +237,14 @@
       background: #138496;
   }
 
+  .btn-recharge {
+      background: #17a2b8;
+  }
+
+  .btn-recharge:hover {
+      background: #138496;
+  }
+
   .btn-cancel {
       background: #6c757d;
   }
@@ -822,7 +830,7 @@
     function renderMemberTable(data) {
         let h = '';
         if(data.length===0) h='<tr><td colspan="6">暂无数据</td></tr>';
-        else data.forEach(m => h+=`<tr><td>${m.id}</td><td>${m. name}</td><td>${m. phone}</td><td>${m. gender}</td><td>¥${m.balance}</td><td><button class="btn-edit" onclick="openMemberModal('${m.id}','${m.name}','${m.phone}','${m.gender}')">修改</button><button style="background:#17a2b8" onclick="openRechargeModal(${m.id},'${m.name}',${m.balance})">💰充值</button><button class="btn-del" onclick="delMember(${m.id})">删除</button></td></tr>`);
+        else data.forEach(m => h+=`<tr><td>${m.id}</td><td>${m. name}</td><td>${m. phone}</td><td>${m. gender}</td><td>¥${m.balance}</td><td><button class="btn-edit" onclick="openMemberModal('${m.id}','${m.name}','${m.phone}','${m.gender}')">修改</button><button class="btn-recharge" onclick="openRechargeModal(${m.id},'${m.name}',${m.balance})">💰充值</button><button class="btn-del" onclick="delMember(${m.id})">删除</button></td></tr>`);
         document.querySelector('#memberTable tbody').innerHTML = h;
     }
     function searchMember() {
@@ -874,16 +882,21 @@
     // 提交充值
     function submitRecharge() {
         const id = document.getElementById('rechargeMemId').value;
-        const amount = document.getElementById('rechargeAmount').value;
+        const amountStr = document.getElementById('rechargeAmount').value;
         
-        if (!amount || parseFloat(amount) <= 0) {
+        if (!amountStr || amountStr.trim() === '') {
+            return alert("请输入充值金额");
+        }
+        
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) {
             return alert("充值金额必须大于0");
         }
         
         fetch('/api/members/' + id + '/simple-recharge', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({amount: parseFloat(amount)})
+            body: JSON.stringify({amount: amount})
         })
         .then(async response => {
             if (response.ok) {
